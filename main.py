@@ -9,6 +9,7 @@ st.title("ILAS2025 Dashboard")
 st.session_state.DATAPATH = "data"
 
 pages = [
+    st.Page("statistics.py", title="Statistics"),
     st.Page("fuzzy-search.py", title="Fuzzy Search"),
     st.Page("registration-status.py", title="Registration Status")
 ]
