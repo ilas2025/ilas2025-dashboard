@@ -17,6 +17,10 @@ if st.session_state.password == st.secrets.password:
     
     talks = pd.read_csv(os.path.join(st.session_state.DATAPATH, "talks.csv")).set_index("TID").dropna(how="all")
 
+    posters = pd.read_csv(os.path.join(st.session_state.DATAPATH, "posters.csv"))
+
+    srp = pd.read_csv(os.path.join(st.session_state.DATAPATH, "SRP.csv"))
+
     ms_status = pd.DataFrame({
         "UNMATCH": None,
         "EXPECTED": m_speakers.groupby("TYPE")["NAME"].count(),
@@ -24,17 +28,23 @@ if st.session_state.password == st.secrets.password:
         "NOT_REG": None,
     }, index=minis.index)
 
-    st.write("🚧 Plenary talks Need full list.")
-    st.write("🚧 Posters not yet done.")
-
     st.write("Registration data is linked through the abstract data, so missing registration can possibly due to missing abstract")
-    
+
+    # PLENARY
     st.subheader("Plenary talks")
     
+    from_srp = srp.loc[srp.SESSION.str.match("P[0-9]{1,2}$"),["FIRST_NAME","LAST_NAME"]]
+    # from_srp["full_name"] = (srp.FIRST_NAME + " " + srp.LAST_NAME).str.lower()
     from_talks = talks.loc[talks.TYPE.str.startswith("Plenary"),["FIRST_NAME","LAST_NAME","EMAIL","TITLE"]]
-    # st.write(
-    st.dataframe(from_talks)
+    # from_talks["full_name"] = (from_talks.FIRST_NAME + " " + from_talks.LAST_NAME).str.lower()
+
+    p_join = pd.merge(from_talks, reg, on="EMAIL", how="left")
+    p_join = pd.merge(from_srp, p_join, on=["FIRST_NAME", "LAST_NAME"], how="outer")
     
+
+    st.dataframe(p_join)
+
+    # MINI
     for ms in minis.index:
         st.subheader(ms + ": " + minis.loc[ms,"TITLE"])
         from_m_speakers = m_speakers.loc[m_speakers.TYPE == ms, ["NAME"]].copy()
@@ -55,12 +65,30 @@ if st.session_state.password == st.secrets.password:
         # st.dataframe(from_talks)
         st.dataframe(ms_join)
         
+    # CONTRIBUTED
     st.subheader("Contributed talks")
     
     from_talks = talks.loc[talks.TYPE.str.startswith("Contributed"),["FIRST_NAME","LAST_NAME","EMAIL","TITLE"]]
-    st.dataframe(from_talks)
+    ct_join = pd.merge(from_talks, reg, on="EMAIL", how="left")
 
+    ct_status = {
+        "EXPECTED": ct_join.shape[0],
+        "NOT_REG": pd.isna(ct_join.藍新實收).sum()
+    }
+    st.write(ct_status)
+    st.dataframe(ct_join)
+
+    # POSTER
     st.subheader("Posters")
+
+    ps_join = pd.merge(posters, reg, on="EMAIL", how="left")
+
+    ps_status = {
+        "EXPECTED": ps_join.shape[0],
+        "NOT_REG": pd.isna(ps_join.藍新實收).sum()
+    }
+    st.write(ps_status)
+    st.dataframe(ps_join)
 
     st.subheader("Summary")
 
