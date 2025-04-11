@@ -14,7 +14,7 @@ pages = [
     st.Page("registration-status.py", title="Registration Status")
 ]
 
-st.sidebar.text_input("", type="password", key="password")
+st.sidebar.text_input("Password", type="password", key="password")
 
 if st.session_state.password == st.secrets.password:
 
