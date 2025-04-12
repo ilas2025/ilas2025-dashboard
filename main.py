@@ -2,7 +2,7 @@ import streamlit as st
 
 import os
 import time
-import urllib
+import urllib.request
 
 st.title("ILAS2025 Dashboard")
 

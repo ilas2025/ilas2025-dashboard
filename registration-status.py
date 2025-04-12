@@ -30,6 +30,8 @@ if st.session_state.password == st.secrets.password:
 
     st.write("Registration data is linked through the abstract data, so missing registration can possibly due to missing abstract")
 
+    show_all = st.toggle("Show all")
+    
     # PLENARY
     st.subheader("Plenary talks")
     
@@ -55,6 +57,7 @@ if st.session_state.password == st.secrets.password:
         ms_join = pd.merge(from_talks, reg, on="EMAIL", how="left")
         ms_join = pd.merge(from_m_speakers, ms_join, on="full_name", how="outer")
         ms_join.drop("full_name", axis=1, inplace=True)
+        ms_join["REGISTERED"] = ms_join.藍新實收.apply(lambda x: "Yes" if pd.notna(x) else "No")
         
         ms_status.loc[ms,"UNMATCH"] = pd.isna(ms_join.NAME).sum()
         ms_status.loc[ms,"NO_ABS"] = pd.isna(ms_join.LAST_NAME).sum()
@@ -63,7 +66,12 @@ if st.session_state.password == st.secrets.password:
         st.dataframe(ms_status.loc[[ms]])
         # st.dataframe(from_m_speakers)
         # st.dataframe(from_talks)
-        st.dataframe(ms_join)
+        
+
+        if show_all:
+            st.dataframe(ms_join)
+        else:
+            st.dataframe(ms_join.loc[:,["NAME","FIRST_NAME","LAST_NAME","TITLE","REGISTERED"]])
         
     # CONTRIBUTED
     st.subheader("Contributed talks")
