@@ -49,6 +49,8 @@ if st.session_state.password == st.secrets.password:
     # MINI
     for ms in minis.index:
         st.subheader(ms + ": " + minis.loc[ms,"TITLE"])
+        st.write(minis.loc[ms,"ORGANIZERS"])
+        
         from_m_speakers = m_speakers.loc[m_speakers.TYPE == ms, ["NAME"]].copy()
         from_m_speakers["full_name"] = from_m_speakers.NAME.str.lower()
         from_talks = talks.loc[talks.TYPE.str.startswith(ms + ":"),["FIRST_NAME","LAST_NAME","EMAIL","TITLE"]]
