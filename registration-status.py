@@ -13,14 +13,28 @@ if st.session_state.password == st.secrets.password:
     
     minis = pd.read_csv(os.path.join(st.session_state.DATAPATH, "minis.csv")).set_index("MID")
     
-    m_speakers = pd.read_csv(os.path.join(st.session_state.DATAPATH, "mini-speakers.csv"))
-    
     talks = pd.read_csv(os.path.join(st.session_state.DATAPATH, "talks.csv")).set_index("TID").dropna(how="all")
 
     posters = pd.read_csv(os.path.join(st.session_state.DATAPATH, "posters.csv"))
 
     srp = pd.read_csv(os.path.join(st.session_state.DATAPATH, "SRP.csv"))
 
+    DATA_SOURCE = st.selectbox("Mini-symposium speakers data source", 
+                               ["mini-speakers", "SRP-collector", "SRP"],
+                               index=1)
+
+    if DATA_SOURCE == "mini-speakers":
+        m_speakers = pd.read_csv(os.path.join(st.session_state.DATAPATH, "mini-speakers.csv"))
+    if DATA_SOURCE == "SRP-collector":
+        srp_collector = pd.read_csv(os.path.join(st.session_state.DATAPATH, "SRP-collector.csv"))
+        m_speakers = srp_collector.loc[srp_collector.TYPE.str.match("MS[0-9]{1,2}$").fillna(False)]
+        m_speakers["NAME"] = m_speakers.FIRST_NAME + " " + m_speakers.LAST_NAME
+        m_speakers = m_speakers.loc[:,["TYPE","NAME"]]
+        m_speakers = m_speakers.loc[pd.notna(m_speakers.NAME)]
+    if DATA_SOURCE == "SRP":
+        st.write("Not yet implemented.  Showing SRP-collector data now.")
+        m_speakers = pd.read_csv(os.path.join(st.session_state.DATAPATH, "mini-speakers.csv"))
+    
     ms_status = pd.DataFrame({
         "UNMATCH": None,
         "EXPECTED": m_speakers.groupby("TYPE")["NAME"].count(),
