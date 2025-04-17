@@ -103,6 +103,7 @@ if st.session_state.password == st.secrets.password:
         pass
     else:
         st.dataframe(all_ms_join)
+        st.dataframe(all_ms_join.TYPE.str[2:])
         all_ms_join["MS_WEIGHT"] = all_ms_join.TYPE.str[2:].astype(int)
         all_ms_join.replace("Šmigoc", "Smigoc", inplace=True) # for Šmigoc sorting
         all_ms_join.sort_values(["MS_WEIGHT","LAST_NAME_x"], inplace=True)
