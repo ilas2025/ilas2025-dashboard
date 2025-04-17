@@ -19,24 +19,25 @@ if st.session_state.password == st.secrets.password:
 
     srp = pd.read_csv(os.path.join(st.session_state.DATAPATH, "SRP.csv"))
 
-    DATA_SOURCE = st.selectbox("Mini-symposium speakers data source", 
+    DATASOURCE = st.selectbox("Mini-symposium speakers data source", 
                                ["mini-speakers", "SRP-collector", "SRP"],
                                index=1)
 
-    if DATA_SOURCE == "mini-speakers":
+    if DATASOURCE == "mini-speakers":
         m_speakers = pd.read_csv(os.path.join(st.session_state.DATAPATH, "mini-speakers.csv"))
-    if DATA_SOURCE == "SRP-collector":
+    if DATASOURCE == "SRP-collector":
         srp_collector = pd.read_csv(os.path.join(st.session_state.DATAPATH, "SRP-collector.csv"))
-        m_speakers = srp_collector.loc[srp_collector.TYPE.str.match("MS[0-9]{1,2}$").fillna(False)]
+        m_speakers = srp_collector.loc[srp_collector.TYPE.str.match("MS[0-9]{1,2}$").fillna(False)].copy()
         m_speakers["NAME"] = m_speakers.FIRST_NAME + " " + m_speakers.LAST_NAME
-        m_speakers = m_speakers.loc[:,["TYPE","NAME"]]
+        m_speakers = m_speakers.loc[:,["TYPE","FIRST_NAME", "LAST_NAME","NAME"]]
         m_speakers = m_speakers.loc[pd.notna(m_speakers.NAME)]
-    if DATA_SOURCE == "SRP":
+    if DATASOURCE == "SRP":
         st.write("Not yet implemented.  Showing SRP-collector data now.")
         m_speakers = pd.read_csv(os.path.join(st.session_state.DATAPATH, "mini-speakers.csv"))
     
     ms_status = pd.DataFrame({
         "UNMATCH": None,
+        "OFF": None,
         "EXPECTED": m_speakers.groupby("TYPE")["NAME"].count(),
         "NO_ABS": None,
         "NOT_REG": None,
@@ -61,11 +62,16 @@ if st.session_state.password == st.secrets.password:
     st.dataframe(p_join)
 
     # MINI
+    all_ms_join_list = []
     for ms in minis.index:
         st.subheader(ms + ": " + minis.loc[ms,"TITLE"])
         st.write(minis.loc[ms,"ORGANIZERS"])
         
-        from_m_speakers = m_speakers.loc[m_speakers.TYPE == ms, ["NAME"]].copy()
+        if DATASOURCE == "mini-speakers":
+            from_m_speakers = m_speakers.loc[m_speakers.TYPE == ms, ["TYPE", "NAME"]].copy()
+        else:
+            from_m_speakers = m_speakers.loc[m_speakers.TYPE == ms, ["TYPE", "FIRST_NAME", "LAST_NAME", "NAME"]].copy()
+            from_m_speakers.rename(columns={"FIRST_NAME": "FIRST_NAME_x", "LAST_NAME": "LAST_NAME_x"}, inplace=True)
         from_m_speakers["full_name"] = from_m_speakers.NAME.str.lower()
         from_talks = talks.loc[talks.TYPE.str.startswith(ms + ":"),["FIRST_NAME","LAST_NAME","EMAIL","TITLE"]]
         from_talks["full_name"] = (from_talks.FIRST_NAME + " " + from_talks.LAST_NAME).str.lower()
@@ -74,21 +80,39 @@ if st.session_state.password == st.secrets.password:
         ms_join = pd.merge(from_m_speakers, ms_join, on="full_name", how="outer")
         ms_join.drop("full_name", axis=1, inplace=True)
         ms_join["REGISTERED"] = ms_join.藍新實收.apply(lambda x: "Yes" if pd.notna(x) else "No")
+        all_ms_join_list.append(ms_join)
         
         ms_status.loc[ms,"UNMATCH"] = pd.isna(ms_join.NAME).sum()
+        ms_status.loc[ms,"OFF"] = ms_join.shape[0] - ms_status.loc[ms,"EXPECTED"]
         ms_status.loc[ms,"NO_ABS"] = pd.isna(ms_join.LAST_NAME).sum()
         ms_status.loc[ms,"NOT_REG"] = pd.isna(ms_join.藍新實收).sum()
-        
+
         st.dataframe(ms_status.loc[[ms]])
         # st.dataframe(from_m_speakers)
         # st.dataframe(from_talks)
         
-
         if show_all:
-            st.dataframe(ms_join)
+            st.dataframe(ms_join.iloc[:,1:])
         else:
             st.dataframe(ms_join.loc[:,["NAME","FIRST_NAME","LAST_NAME","TITLE","REGISTERED"]])
-        
+    
+    st.subheader("All MS")
+
+    all_ms_join = pd.concat(all_ms_join_list, ignore_index=True)
+    if DATASOURCE == "mini-speakers":
+        pass
+    else:
+        all_ms_join["MS_WEIGHT"] = all_ms_join.TYPE.str[2:].astype(int)
+        all_ms_join.replace("Šmigoc", "Smigoc", inplace=True) # for Šmigoc sorting
+        all_ms_join.sort_values(["MS_WEIGHT","LAST_NAME_x"], inplace=True)
+        all_ms_join = all_ms_join.reindex()
+        all_ms_join.drop(columns="MS_WEIGHT")
+
+    if show_all:
+        st.dataframe(all_ms_join)
+    else:
+        st.dataframe(all_ms_join.loc[:,["TYPE","NAME","TITLE"]])
+
     # CONTRIBUTED
     st.subheader("Contributed talks")
     
@@ -114,6 +138,7 @@ if st.session_state.password == st.secrets.password:
     st.write(ps_status)
     st.dataframe(ps_join)
 
+    # SUMMARY
     st.subheader("Summary")
 
     st.dataframe(ms_status)
