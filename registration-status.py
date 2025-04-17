@@ -96,25 +96,6 @@ if st.session_state.password == st.secrets.password:
         else:
             st.dataframe(ms_join.loc[:,["NAME","FIRST_NAME","LAST_NAME","TITLE","REGISTERED"]])
     
-    st.subheader("All MS")
-
-    all_ms_join = pd.concat(all_ms_join_list, ignore_index=True)
-    if DATASOURCE == "mini-speakers":
-        pass
-    else:
-        st.dataframe(all_ms_join)
-        st.dataframe(all_ms_join.TYPE.str[2:])
-        all_ms_join["MS_WEIGHT"] = all_ms_join.TYPE.str[2:].astype(int)
-        all_ms_join.replace("Šmigoc", "Smigoc", inplace=True) # for Šmigoc sorting
-        all_ms_join.sort_values(["MS_WEIGHT","LAST_NAME_x"], inplace=True)
-        all_ms_join = all_ms_join.reindex()
-        all_ms_join.drop(columns="MS_WEIGHT")
-
-    if show_all:
-        st.dataframe(all_ms_join)
-    else:
-        st.dataframe(all_ms_join.loc[:,["TYPE","NAME","TITLE"]])
-
     # CONTRIBUTED
     st.subheader("Contributed talks")
     
@@ -144,3 +125,21 @@ if st.session_state.password == st.secrets.password:
     st.subheader("Summary")
 
     st.dataframe(ms_status)
+
+    # ALL_MS
+    st.subheader("All MS")
+
+    all_ms_join = pd.concat(all_ms_join_list, ignore_index=True)
+    if DATASOURCE == "mini-speakers":
+        pass
+    else:
+        all_ms_join["MS_WEIGHT"] = all_ms_join.TYPE.str[2:].astype(int)
+        all_ms_join.replace("Šmigoc", "Smigoc", inplace=True) # for Šmigoc sorting
+        all_ms_join.sort_values(["MS_WEIGHT","LAST_NAME_x"], inplace=True)
+        all_ms_join = all_ms_join.reindex()
+        all_ms_join.drop(columns="MS_WEIGHT")
+
+    if show_all:
+        st.dataframe(all_ms_join)
+    else:
+        st.dataframe(all_ms_join.loc[:,["TYPE","NAME","TITLE"]])
