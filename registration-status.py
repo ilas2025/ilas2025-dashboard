@@ -124,6 +124,7 @@ if st.session_state.password == st.secrets.password:
     # SUMMARY
     st.subheader("Summary")
 
+    st.dataframe(pd.DataFrame([ms_status.sum(axis=0)], index=["TOTAL"]))
     st.dataframe(ms_status)
 
     # ALL_MS
@@ -139,7 +140,21 @@ if st.session_state.password == st.secrets.password:
         all_ms_join = all_ms_join.reindex()
         all_ms_join.drop(columns="MS_WEIGHT")
 
-    if show_all:
+    selection = st.segmented_control(
+        "Output format",
+        ["all", "mini-speakers", "reg-status"],
+        default="mini-speakers"
+    )
+
+    if selection == "all":
         st.dataframe(all_ms_join)
-    else:
+    elif selection == "mini-speakers":
         st.dataframe(all_ms_join.loc[:,["TYPE","NAME","TITLE"]])
+    elif selection == "reg-status":
+        st.dataframe(
+            all_ms_join.loc[:,["TYPE","FIRST_NAME_x","LAST_NAME_x","TITLE","REGISTERED"]].rename(
+                columns={"FIRST_NAME_x": "FIRST_NAME", "LAST_NAME_x": "LAST_NAME", "REGISTERED": "ALL_DONE"}
+            )
+        )
+    else:
+        pass
