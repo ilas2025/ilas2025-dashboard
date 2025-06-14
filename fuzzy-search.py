@@ -11,6 +11,28 @@ st.header("Search in database")
 if st.session_state.password == st.secrets.password:
     
     search_key = st.text_input("Search")
+
+    show_all = st.toggle("Show all")
+
+    ## Registration number
+    st.markdown("## Registration number")
+
+    reg_num = pd.read_csv(os.path.join(st.session_state.DATAPATH, "reg-num.csv"), header=1).set_index("REG")
+    reg_num["FULL_NAME"] = (reg_num.FIRST_NAME + " " + reg_num.LAST_NAME).str.lower()
+    reg_num = reg_num.loc[~reg_num.FULL_NAME.isna()]
+
+    mask = reg_num.FULL_NAME.str.contains(search_key.lower())
+
+    main_columns = ["FIRST_NAME", "LAST_NAME", "BADGE_NAME", "NOTE"]
+
+    if mask.sum() <= 5:
+        for ind,row in reg_num.loc[mask].iterrows():
+            st.metric(row.FIRST_NAME + " " + row.LAST_NAME, ind)
+    
+    if show_all:
+        st.dataframe(reg_num.loc[mask])
+    else:
+        st.dataframe(reg_num.loc[mask, main_columns])
     
     ## Registration data
     st.markdown("## Registration data")
@@ -23,7 +45,6 @@ if st.session_state.password == st.secrets.password:
     
     main_columns = ["FIRST_NAME", "LAST_NAME", "TOTAL", "藍新實收"]
     
-    show_all = st.toggle("Show all")
     if show_all:
         st.dataframe(reg.loc[mask])
     else:
